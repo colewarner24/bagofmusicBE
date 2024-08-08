@@ -1,0 +1,11 @@
+.env
+env
+.elasticbeanstalk/logs/*
+.elasticbeanstalk/app_versions/*
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+./gensimapi/models/*
+**/__pycache__/
