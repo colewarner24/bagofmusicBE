@@ -5,6 +5,8 @@ from .models import Album
 from .word2vec_helper import get_similar_words
 from django.views.decorators.http import require_POST
 import traceback, sys
+from .models import paginated_scan
+
 
 @require_POST
 def query_albums(request):
@@ -16,23 +18,20 @@ def query_albums(request):
             return JsonResponse({'error': 'words list is required'}, status=400)
 
         # Collect albums that match any of the provided descriptors
-        descriptors = get_similar_words("models/descriptors.json", words)
+        descriptors = get_similar_words("descriptors.json", words)
         
         # Create a dictionary to store albums and their match counts
         album_scores = {}
         print(descriptors)
 
-        for descriptor in descriptors:
-            albums = Album.scan(
-                Album.genre_descriptors.contains(descriptor)
-            )
-            for album in albums:
-                print("here")
-                print(album)
-                print(album.genre_descriptors)
-                print("also here")
+        for descriptor in descriptors[:1]:
+            # albums = paginated_scan(
+            #     Album.genre_descriptors.contains(descriptor)
+            # )
+            for album in paginated_scan(Album.genre_descriptors.contains(descriptor), 10):
                 if album.spotify_id not in album_scores: #change spotify_id later to album_id
                     # Initialize score and add album to dictionary
+                    print(album.genre_descriptors)
                     album_scores[album.spotify_id] = {'album': album, 'score': 0}
                     
                     score = sum(1 for d in album.genre_descriptors if d in descriptors)
@@ -47,8 +46,8 @@ def query_albums(request):
         sorted_albums = sorted(album_scores.values(), key=lambda x: x['score'], reverse=True)[:10]
        
         len(sorted_albums)
-        for album in sorted_albums:
-            print(album['album'].title, album['score'])
+        # for album in sorted_albums:
+            # print(album['album'].title, album['score'])
         # Prepare the response
         response = [album['album'].attribute_values for album in sorted_albums]
         return JsonResponse(response, safe=False, json_dumps_params={'indent': 2})
@@ -62,8 +61,9 @@ def query_albums(request):
         output+="\tTraceback is:\n"
         for (file,linenumber,affected,line)  in trace:
             output+="\t> Error at function %s\n" % (affected)
-            output+="\t  At: %s:%s\n" % (file.replace(" ", "%"),linenumber)
+            output+="\t  At: %s:%s\n" % (file.replace(" ", "\\ "),linenumber)
             output+="\t  Source: %s\n" % (line)
         output+="\t> Exception: %s\n" % (e)
         print(output)
         return JsonResponse({'error': str(output)}, status=500)
+    

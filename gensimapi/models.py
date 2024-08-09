@@ -1,5 +1,5 @@
 from pynamodb.models import Model
-from pynamodb.attributes import UnicodeAttribute, ListAttribute, NumberAttribute, UnicodeSetAttribute
+from pynamodb.attributes import UnicodeAttribute, ListAttribute, NumberAttribute, MapAttribute
 
 import os
 
@@ -14,18 +14,33 @@ class Album(Model):
             region = 'us-east-1'  # Replace with your AWS region
             host = "http://localhost:8000"
 
-    album_id = UnicodeAttribute(hash_key=True)
-    title = UnicodeAttribute(range_key=True)
+    album_id = UnicodeAttribute(null=True)
+    title = UnicodeAttribute(null=True)
     artist = UnicodeAttribute()
     date = UnicodeAttribute()
     genres_primary = ListAttribute()
     genres_secondary = ListAttribute()
-    rating = NumberAttribute()
+    rating = NumberAttribute(range_key=True)
     total_ratings = UnicodeAttribute()
     total_reviews = UnicodeAttribute()
     genre_descriptors = ListAttribute()
-    spotify_id = UnicodeAttribute(null=True)
+    spotify_id = UnicodeAttribute(hash_key=True)
     applemusic_id = UnicodeAttribute(null=True)
     soundcloud_id = UnicodeAttribute(null=True)
     bandcamp_id = UnicodeAttribute(null=True)
     youtube_id = UnicodeAttribute(null=True)
+    
+# Use a paginated scan function to handle large datasets
+def paginated_scan(filter_condition, limit):
+    scan_kwargs = {}
+    last_evaluated_key = None
+    while True:
+        print("scanning")
+        results = Album.scan(**scan_kwargs, filter_condition=filter_condition, limit=limit, last_evaluated_key=last_evaluated_key)
+        for item in results:
+            yield item
+        if results.last_evaluated_key:
+            #scan_kwargs['exclusive_start_key'] = results.last_evaluated_key
+            last_evaluated_key = results.last_evaluated_key
+        else:
+            break

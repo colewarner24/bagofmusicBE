@@ -9,3 +9,4 @@ env
 !.elasticbeanstalk/*.global.yml
 ./gensimapi/models/*
 **/__pycache__/
+**/models/
